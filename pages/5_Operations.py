@@ -46,8 +46,9 @@ for df in [gst, deno, dayend]:
     if not df.empty:
         for c in df.select_dtypes(include=["object"]).columns:
             try:
-                df[c] = pd.to_numeric(df[c], errors="ignore")
-            except Exception:
+                df[c] = pd.to_numeric(df[c])
+            except (ValueError, TypeError):
+                # Skip columns that cannot be converted
                 pass
 
 if not dayend.empty:
