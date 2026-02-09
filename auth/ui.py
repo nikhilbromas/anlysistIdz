@@ -12,6 +12,7 @@ from typing import Any, Dict, List
 import streamlit as st
 
 from auth.service import auth_service
+from auth.token import create_session_token, decode_session_token
 from config import set_active_company_connection, clear_active_company_connection
 
 
@@ -79,7 +80,23 @@ def render_company_selector() -> None:
 
         st.session_state["active_company"] = details
         st.success(f"Active company set to {details.get('CompanyName', 'selected company')}.")
-        # Re-run app with new active DB (Streamlit >= 1.27 uses st.rerun)
+
+        # Issue a signed session token and store it in the URL query params using st.query_params
+        try:
+            user = st.session_state.get("auth_user") or {}
+            token = create_session_token(
+                user_id=int(user.get("user_id")),
+                company_id=int(company_id),
+                email=user.get("email", ""),
+            )
+            params = dict(st.query_params)
+            params["session"] = token
+            st.query_params = params
+        except Exception:
+            # Non-fatal: token is just for convenience
+            pass
+
+        # Re-run app with new active DB (and token if available)
         st.rerun()
 
 
@@ -96,7 +113,69 @@ def _render_auth_sidebar() -> None:
             for key in ["auth_user", "available_companies", "active_company"]:
                 st.session_state.pop(key, None)
             clear_active_company_connection()
+            # Clear session token from URL
+            try:
+                params = dict(st.query_params)
+                if "session" in params:
+                    params.pop("session")
+                st.query_params = params
+            except Exception:
+                pass
             st.rerun()
+
+
+def _try_restore_session_from_token() -> None:
+    """
+    If a valid session token is present in the URL, restore auth_user and
+    active_company into session_state so user stays logged in across refreshes.
+    """
+    # If session already active, nothing to do
+    if "auth_user" in st.session_state and "active_company" in st.session_state:
+        return
+
+    try:
+        params = dict(st.query_params)
+    except Exception:
+        return
+
+    token_val = params.get("session")
+    if not token_val:
+        return
+
+    # st.query_params may return a list or a string depending on version
+    if isinstance(token_val, list):
+        token = token_val[0] if token_val else ""
+    else:
+        token = token_val
+    if not token:
+        return
+
+    payload = decode_session_token(token)
+    if not payload:
+        return
+
+    user_id = int(payload.get("uid", 0) or 0)
+    company_id = int(payload.get("cid", 0) or 0)
+    email = payload.get("email", "")
+    if not user_id or not company_id:
+        return
+
+    # Rehydrate minimal auth_user and active_company
+    st.session_state["auth_user"] = {"user_id": user_id, "email": email}
+    # Company details from auth DB
+    details = auth_service.get_company_details(company_id)
+    if details:
+        server = details.get("DBserver", "")
+        database = details.get("DBname", "")
+        user_name = details.get("DBuserName", "")
+        password = details.get("DBpassword", "")
+        set_active_company_connection(
+            server=server,
+            database=database,
+            user=user_name,
+            password=password,
+        )
+        st.session_state["active_company"] = details
 
 
 def require_login_and_company(page_title: str) -> None:
@@ -109,6 +188,9 @@ def require_login_and_company(page_title: str) -> None:
     """
     # Ensure consistent page title (pages themselves also set titles)
     st.caption(f"Page: {page_title}")
+
+    # First try to restore from token (if any)
+    _try_restore_session_from_token()
 
     if "auth_user" not in st.session_state:
         render_login_form()

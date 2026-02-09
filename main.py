@@ -23,6 +23,10 @@ st.markdown(
     Use the sidebar to navigate:
     - **Dashboard** — Sales KPIs, trends, service-charge analysis, payment modes
     - **ML Insights** — Sales forecasting, ingredient demand prediction
+    - **AI Assistant** — Ask questions over your sales/stock/customer data
+
+    To enable the AI Assistant, set `OPENAI_API_KEY` in your `.env` file
+    (OpenAI-compatible API key) and restart the app.
     """
 )
 

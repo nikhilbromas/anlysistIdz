@@ -33,6 +33,17 @@ AUTH_MSSQL_PASSWORD = os.getenv("AUTH_MSSQL_PASSWORD", MSSQL_PASSWORD)
 AUTH_MSSQL_DATABASE = os.getenv("AUTH_MSSQL_DATABASE", MSSQL_DATABASE)
 AUTH_MSSQL_DRIVER = os.getenv("AUTH_MSSQL_DRIVER", MSSQL_DRIVER)
 
+# ── LLM / Gen-AI configuration (optional) ───────────────────────────────────
+# Only used if you enable the AI assistant page.
+LLM_API_KEY = os.getenv("OPENAI_API_KEY", "")  # or any OpenAI-compatible provider
+LLM_API_BASE = os.getenv("OPENAI_API_BASE", "https://api.openai.com/v1")
+LLM_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+
+# ── Auth token configuration (for persistent login) ─────────────────────────
+# Used to sign session tokens that can survive browser refresh.
+AUTH_TOKEN_SECRET = os.getenv("AUTH_TOKEN_SECRET", "change-me-in-production")
+AUTH_TOKEN_TTL_MINUTES = int(os.getenv("AUTH_TOKEN_TTL_MINUTES", "480"))  # default 8 hours
+
 # ── In-memory override for the active POS DB (set after login) ─────────────
 ACTIVE_DB_OVERRIDE: Optional[Dict[str, Any]] = None
 
@@ -107,3 +118,36 @@ def get_auth_connection_string() -> str:
         f"UID={AUTH_MSSQL_USER};"
         f"PWD={AUTH_MSSQL_PASSWORD};"
     )
+
+
+# ── LLM helpers ─────────────────────────────────────────────────────────────
+
+def get_llm_api_key() -> Optional[str]:
+    """Return the configured LLM API key, or None if not set."""
+    key = LLM_API_KEY.strip()
+    return key or None
+
+
+def get_llm_api_base() -> str:
+    """Return the base URL for the LLM HTTP API."""
+    return LLM_API_BASE.rstrip("/")
+
+
+def get_llm_model() -> str:
+    """Return the default model name for the LLM."""
+    return LLM_MODEL
+
+
+def is_ai_enabled() -> bool:
+    """Return True if the AI assistant should be enabled (API key present)."""
+    return get_llm_api_key() is not None
+
+
+def get_auth_token_secret() -> str:
+    """Secret key used to sign auth session tokens."""
+    return AUTH_TOKEN_SECRET
+
+
+def get_auth_token_ttl_minutes() -> int:
+    """TTL for auth tokens in minutes."""
+    return AUTH_TOKEN_TTL_MINUTES
