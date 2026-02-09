@@ -5,12 +5,15 @@ Supports session-based (cross-midnight) reporting.
 import streamlit as st
 import pandas as pd
 import numpy as np
+from auth.ui import require_login_and_company
 from data_loader import (
     get_sessions,
     get_gst_sales,
     get_denomination_detail,
     get_day_end_sales,
 )
+
+require_login_and_company("Operations")
 
 st.title("Operations")
 

@@ -4,7 +4,10 @@ mode=1 stock IN, mode=-1 stock OUT.
 """
 import streamlit as st
 import pandas as pd
+from auth.ui import require_login_and_company
 from data_loader import get_stock_movement, get_restaurant_shops, get_currencies
+
+require_login_and_company("Stock Movement")
 
 st.title("Stock Movement")
 
@@ -47,22 +50,17 @@ if sel_shop != "All" and not shops.empty:
     stk = stk[stk["shopid"] == sid]
 
 # ---- Initialize date range once ----
-if "stk_dr" not in st.session_state:
-    if stk["sdate"].notna().any():
-        st.session_state.stk_dr = (
-            stk["sdate"].min().date(),
-            stk["sdate"].max().date()
-        )
+if "stk_dr" not in st.session_state and stk["sdate"].notna().any():
+    st.session_state["stk_dr"] = (
+        stk["sdate"].min().date(),
+        stk["sdate"].max().date(),
+    )
 
-# ---- Sidebar input (controlled by session_state) ----
-dr = st.sidebar.date_input(
-    "Date range",
-    value=st.session_state.stk_dr,
-    key="stk_dr"
-)
+# ---- Sidebar input (state-driven, no explicit value) ----
+dr = st.sidebar.date_input("Date range", key="stk_dr")
 
 # ---- Apply filter only when user selects ----
-if len(dr) == 2:
+if isinstance(dr, (list, tuple)) and len(dr) == 2:
     stk = stk[
         (stk["sdate"] >= pd.Timestamp(dr[0])) &
         (stk["sdate"] <= pd.Timestamp(dr[1]))

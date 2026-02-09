@@ -4,7 +4,10 @@ segment-wise item pricing.
 """
 import streamlit as st
 import pandas as pd
+from auth.ui import require_login_and_company
 from data_loader import get_customer_profitability, get_segment_item_pricing
+
+require_login_and_company("Customer Analysis")
 
 st.title("Customer Analysis")
 

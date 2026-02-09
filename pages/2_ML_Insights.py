@@ -5,9 +5,12 @@ import pandas as pd
 import numpy as np
 import streamlit as st
 
+from auth.ui import require_login_and_company
 from data_loader import get_sales_summary, get_order_ingredient, get_stock_movement
 from ml.features import prepare_sales_features, prepare_ingredient_features, prepare_stock_features
 from ml.models import train_model, get_feature_importance, MODEL_REGISTRY
+
+require_login_and_company("ML Insights")
 
 st.title("ML Insights")
 

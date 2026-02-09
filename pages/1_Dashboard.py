@@ -4,6 +4,7 @@ Split Payments, Segment Analysis.
 """
 import streamlit as st
 import pandas as pd
+from auth.ui import require_login_and_company
 from data_loader import (
     get_restaurant_shops,
     get_sales_summary,
@@ -16,6 +17,9 @@ from data_loader import (
     get_split_payments,
     get_sessions,
 )
+
+# Require login + active company before any DB access
+require_login_and_company("Restaurant Dashboard")
 
 st.title("Restaurant Dashboard")
 
