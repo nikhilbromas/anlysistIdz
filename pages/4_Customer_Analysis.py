@@ -37,30 +37,8 @@ if df["billdate"].notna().any():
     mn = df["billdate"].min().date()
     mx = df["billdate"].max().date()
     dr = st.sidebar.date_input("Date range", value=(mn, mx), min_value=mn, max_value=mx, key="cust_dr")
-    # if len(dr) == 2:
-    #     df = df[(df["billdate"] >= pd.Timestamp(dr[0])) & (df["billdate"] <= pd.Timestamp(dr[1]))]
-
-# ---- Initialize date range once ----
-if "stk_dr" not in st.session_state:
-    if df["billdate"].notna().any():
-        st.session_state.stk_dr = (
-            df["billdate"].min().date(),
-            df["billdate"].max().date()
-        )
-
-# ---- Sidebar input (controlled by session_state) ----
-dr = st.sidebar.date_input(
-    "Date range",
-    value=st.session_state.stk_dr,
-    key="stk_dr"
-)
-
-# ---- Apply filter only when user selects ----
-if len(dr) == 2:
-    df = df[
-        (df["billdate"] >= pd.Timestamp(dr[0])) &
-        (df["billdate"] <= pd.Timestamp(dr[1]))
-    ]
+    if len(dr) == 2:
+        df = df[(df["billdate"] >= pd.Timestamp(dr[0])) & (df["billdate"] <= pd.Timestamp(dr[1]))]
 
 if df.empty:
     st.warning("No data for selected date range.")
